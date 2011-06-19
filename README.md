@@ -27,7 +27,7 @@ library and provides RESTful request handling similar to the
 
 *shell*
 
-        $ make && erlc hello_world.erl && erl -pa ebin/
+        $ make && erlc -pa ebin/ hello_world.erl && erl -pa ebin/
         [...]
         1> spooky:start_link(hello_world)
         {ok, <0.40.0>}
