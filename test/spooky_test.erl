@@ -57,6 +57,14 @@ start_list_test()->
     {ok, _Pid} = spooky:start_link([spooky_get_hello_world, spooky_post_hello_world]),
     stop().
 
+stop_test()->
+    {ok, _Pid} = spooky:start_link([spooky_get_hello_world]),
+    stop(),
+    case catch spooky_server:handle(request()) of
+        {'EXIT', {shutdown, _}} ->
+            ok        
+    end.
+
 get_test()->
     spooky:start_link(spooky_get_hello_world),
     spooky_server:handle(request()),
