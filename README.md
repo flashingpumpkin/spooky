@@ -14,28 +14,25 @@ library and provides RESTful request handling similar to the
         -module(hello_world).
         -behaviour(spooky).
         -export([init/1, get/2]).
-        
+
         init([])->
-            [{ port, 8000 }].
+            [{port, 8000}].
 
         get(Req, [])->
-            Req.ok("Hello world.");
-        get(Req, ["smashingpumpkins"])->
+            Req:ok("Hello world.");
+        get(_, ["smashingpumpkins"])->
             throw({418, "I'm a teapot."});
         get(Req, [Name])->
-            Req.ok("Hello world, " ++ Name ++ ".").
+            Req:ok("Hello world, " ++ Name ++ ".").
 
 *shell*
 
-        $ erl
+        $ make && erlc hello_world.erl && erl -pa ebin/
         [...]
         1> spooky:start_link(hello_world)
         {ok, <0.40.0>}
         2> spooky:stop()
         true
-
-*shell* 
-
 
 ## Why?
 
