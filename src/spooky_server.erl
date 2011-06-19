@@ -28,7 +28,6 @@ start_link(Handlers)->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [Handlers], []).
 
 handle(Req)->
-    io:format("Handling request~n"),
     Handlers = handlers(),
     Method = Req:get(method),
     handle(Req, Method, Handlers).
@@ -49,7 +48,6 @@ handlers()->
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
 init([Handlers]) ->
-    io:format("Started process with handlers ~p ~n", [Handlers]),
     {ok, #state{handlers=Handlers}}.
 
 %% --------------------------------------------------------------------
@@ -112,16 +110,13 @@ code_change(_OldVsn, _State, _Extra) ->
 handle(Req, _Method, [], _Path)->
     Req:respond(404);
 handle(Req, Method, [Handler|T], Path)->
-    io:format("Trying handler ~p ~n", [Handler]),
     try apply(Handler, Method, [Req, Path]) of
          _ -> 
              ok
     catch 
         error:undef ->
-            io:format("Undef error ~n"),
             handle(Req, Method, T, Path);
         error:function_clause ->
-            io:format("Function clause error ~n"),
             handle(Req, Method, T, Path);
         Status when is_number(Status)->
             Req:respond(Status);
@@ -142,6 +137,5 @@ handle(Req, 'DELETE', Path)->
 handle(Req, 'HEAD', Path)->
     handle(Req, head, Path);
 handle(Req, Method, Handlers)->
-    io:format("Handling method ~p with handlers ~p ~n", [Method, Handlers]),
     Path = Req:resource([lowercase, urldecode]),
     handle(Req, Method, Handlers, Path).
