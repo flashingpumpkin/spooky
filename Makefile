@@ -1,11 +1,13 @@
 all:
 	./rebar compile
 
-_examples:
+examples: 
 	erlc -pa ebin/ -o ebin/ examples/*erl
 
-examples: all _examples
+test:
+	./rebar compile
+	erlc -pa ebin/ -o ebin/ examples/*erl
+	./rebar eunit
 
-test: _examples
-	./rebar compile eunit
+.PHONY: test
 	
