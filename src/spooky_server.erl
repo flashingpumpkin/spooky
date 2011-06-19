@@ -5,6 +5,7 @@
 %%% Created : 18 Jun 2011
 %%% -------------------------------------------------------------------
 -module(spooky_server).
+-vsn("0.1").
 -behaviour(gen_server).
 
 %% --------------------------------------------------------------------
@@ -13,7 +14,7 @@
 
 %% --------------------------------------------------------------------
 %% External exports
--export([start_link/1, handle/1, handlers/0]).
+-export([start_link/1, handle/1, handle/2, handlers/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -29,6 +30,9 @@ start_link(Handlers)->
 
 handle(Req)->
     Handlers = handlers(),
+    handle(Req, Handlers).
+
+handle(Req, Handlers)->
     Method = Req:get(method),
     handle(Req, Method, Handlers).
 

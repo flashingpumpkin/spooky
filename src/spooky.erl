@@ -2,6 +2,7 @@
 %% Created: 18 Jun 2011
 %% Description: TODO: Add description to spooky
 -module(spooky).
+-vsn("0.1").
 -behaviour(supervisor).
 
 %%
@@ -36,11 +37,8 @@ start([Module|T], Handlers)->
     % The first module's options are the ones for misultin
     Opts = apply(Module, init, [[]]),
     
-    Loop = fun(Req)-> spooky_server:handle(Req) end,
-    
-    Opts0 = Opts ++ [{loop, Loop}],
-    Opts1 = proplists:delete(handlers, Opts0),    
-    start([Module|T], Handlers, Opts1).
+    Opts0 = proplists:delete(handlers, Opts),
+    start([Module|T], Handlers, Opts0).
 
 start([Module|T], Handlers, Opts)->
     % Accumulate all the handlers
@@ -55,7 +53,9 @@ start([Module|T], Handlers, Opts)->
     start(T, Handlers ++ ModuleHandlers, Opts);
 start([], Handlers, Opts)->
     % Start the supervisor
-    supervisor:start_link({local, ?MODULE}, ?MODULE, [Handlers, Opts]).
+    Loop = fun(Req)-> spooky_server:handle(Req, Handlers) end,
+    Opts0 = Opts ++ [{loop, Loop}],
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [Handlers, Opts0]).
 
 %%
 %% Supervisor callback
