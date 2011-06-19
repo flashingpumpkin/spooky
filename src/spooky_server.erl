@@ -115,6 +115,8 @@ handle(Req, _Method, [], _Path)->
     Req:respond(404);
 handle(Req, Method, [Handler|T], Path)->
     try apply(Handler, Method, [Req, Path]) of
+         {redirect, Url} ->
+             Req:respond(301, [{"Location", Url}], "");
          _ -> 
              ok
     catch 

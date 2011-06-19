@@ -77,6 +77,12 @@ get_test()->
     response(404),
     stop().
 
+redirect_test()->
+    spooky:start_link(spooky_hello_world),
+    spooky_server:handle(request('GET', "/teapot")),
+    response(301),
+    stop().
+
 post_test()->
     spooky:start_link(spooky_post_hello_world),
     spooky_server:handle(request('POST')),

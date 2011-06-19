@@ -22,6 +22,8 @@ init([])->
 
 get(Req,[])->
     Req:ok("Hello world");
+get(_Req,["teapot"])->
+    {redirect, "/smashingpumpkins"};
 get(_Req, ["smashingpumpkins"])->
     throw(418);
 get(Req,[Name])->
