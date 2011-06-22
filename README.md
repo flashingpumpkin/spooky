@@ -1,12 +1,12 @@
-# Spooky ![Spooky](http://flashingpumpkin.github.com/spooky/spooky.svg)
+# ![Spooky](http://flashingpumpkin.github.com/spooky/spooky.svg) Spooky 
 
-## Synposis
+## Synopsis
 
 Spooky is a lightweight and dead easy to use RESTful request handler for 
 Erlang.
 
 It's using the [Misultin](https://github.com/ostinelli/misultin) http 
-library and provides RESTful request handling similar to the 
+library and provides request handling similar to the 
 [Sinatra](http://www.sinatrarb.com/) web framework.
 
 *hello_world.erl*
@@ -34,11 +34,25 @@ library and provides RESTful request handling similar to the
         2> spooky:stop()
         true
 
+## Features
+
+* Modular  
+  Split your web application up into different, reusable modules. Say,
+  for user management, mnesia administration or login logic.
+
+* RESTful request handling/routing
+    - Use get/post/put/delete/head methods for a clean seperation of 
+      your HTTP API
+    - Use pattern matching to handle requests to different URLs
+
+* Erlang  
+  Dead simple interfacing to your `gen_servers`, `gen_fsms` and 
+  `gen_events`
+
 ## Todo
 
 * Add session support
 * Write documentation
-
 
 ## Why?
 
