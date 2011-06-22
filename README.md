@@ -1,4 +1,4 @@
-# Spooky
+# Spooky ![Spooky](http://flashingpumpkin.github.com/spooky/spooky.svg)
 
 ## Synposis
 
@@ -34,6 +34,12 @@ library and provides RESTful request handling similar to the
         2> spooky:stop()
         true
 
+## Todo
+
+* Add session support
+* Write documentation
+
+
 ## Why?
 
 Scratching an itch. Spooky is as simple as it gets - you're left to deal
@@ -45,3 +51,11 @@ look at other frameworks:
 * [Erlang Web](http://www.erlang-web.org/)
 * [Chicago Boss](http://www.chicagoboss.org/)
 * [Zotonic](http://zotonic.com/)
+
+## Thanks
+
+Thanks to [Learn you some Erlang](http://www.learnyousomeerlang), 
+[Mochiweb](https://github.com/mochi/mochiweb), 
+[Misultin](https://github.com/ostinelli/misultin) and
+[CouchDB](http://couchdb.org/) for being excellent repositories to learn
+about Erlang.
