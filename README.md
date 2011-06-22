@@ -45,6 +45,10 @@ library and provides request handling similar to the
       your HTTP API
     - Use pattern matching to handle requests to different URLs
 
+* Middlewares  
+  Use chained middlewares to preprocess the request and modify/abort
+  the whole thing at will.
+
 * Erlang  
   Dead simple interfacing to your `gen_servers`, `gen_fsms` and 
   `gen_events`
