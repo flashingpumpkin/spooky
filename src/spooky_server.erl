@@ -102,7 +102,6 @@ handle_info(_Info, _State) ->
 %% Returns: any (ignored by gen_server)
 %% --------------------------------------------------------------------
 terminate(_Reason, _State) ->
-    ?LOG_INFO("Terminating spooky server. ~n ~p", [_Reason]),
     ok.
 
 %% --------------------------------------------------------------------
@@ -147,10 +146,10 @@ respond(Req, Status, Headers, Body, State)->
                    end,
     
     Cookies = lists:map(CookieMapper, State:fetch(cookies)),
-
+    
     Headers0 = State:fetch(headers),
     Headers1 = Headers ++ Headers0 ++ Cookies,   
-    
+   
     Req:respond(Status, Headers1, Body).
 
 % Iterate through a list of funcs until one returns a result or throws 
@@ -163,7 +162,6 @@ continue(Req, Funcs)->
 continue(Req, [], State)->
     respond(Req, 404, State);
 continue(Req, [Func|Funcs], State)->
-    ?LOG_INFO("Continue ~p", Funcs),
     try Func(State) of 
         {response, Status, Headers, Body} ->
             {response, Status, Headers, Body};
@@ -173,6 +171,8 @@ continue(Req, [Func|Funcs], State)->
             respond(Status, Headers, Body, State);
         {redirect, Url }->
             respond(Req, 301, [{"Location", Url}], [], State);
+        {Status, Body} when is_number(Status)->
+            respond(Req, Status, [], Body, State);
         State0 ->
             continue(Req, Funcs, State0)
     catch 

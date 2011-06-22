@@ -12,19 +12,19 @@
 %%
 %% Exported Functions
 %%
--export([init/1, get/2]).
+-export([init/1, get/3]).
 
 %%
 %% API Functions
 %%
 
 init([])->
-    [{port, 8000}, {handlers, [?MODULE]}].
+    [{port, 8008}, {handlers, [?MODULE]}].
 
-get(Req, [])->
-    Req:ok("Hello world.");
-get(Req, [Name])->
-    Req:ok("Hello world, " ++ Name ++ ".").
+get(_Req, [], _State)->
+    {200, "Hello world"};
+get(_Req, [Name], _State)->
+    {200, "Hello world, " ++ Name}.
 
 %%
 %% Local Functions

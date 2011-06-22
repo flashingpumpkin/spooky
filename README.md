@@ -55,7 +55,7 @@ library and provides request handling similar to the
 
 ## Todo
 
-* Add session support
+* Add erlydtl responses
 * Write documentation
 
 ## Why?
