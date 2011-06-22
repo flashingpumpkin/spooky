@@ -5,6 +5,8 @@
 -vsn("0.1").
 -behaviour(supervisor).
 
+-include("../include/spooky.hrl").
+
 %%
 %% Exported Functions
 %%
@@ -23,44 +25,50 @@ stop()->
 stop(Name) when is_atom(Name) ->
     stop(whereis(Name));
 stop(Pid) when is_pid(Pid)->
+    ?LOG_INFO("Stopping spooky with pid ~p", [Pid]),
     exit(Pid, normal).
 
 %% 
 %% Setup functions
 %% 
 start(Module) when is_atom(Module)->
-    start([Module], []);
+    start([Module], [], []);
 start(Modules) when is_list(Modules)->
-    start(Modules, []).
+    start(Modules, [], []).
 
-start([Module|T], Handlers)->
+start([Module|T], Handlers, Middlewares)->
+    ?LOG_INFO("Starting spooky with ~p", [Module]),
     % The first module's options are the ones for misultin
     Opts = apply(Module, init, [[]]),
     
     Opts0 = proplists:delete(handlers, Opts),
-    start([Module|T], Handlers, Opts0).
+    ?LOG_INFO("Options ~p", [Opts]),
+    start([Module|T], Handlers, Middlewares, Opts0).
 
-start([Module|T], Handlers, Opts)->
-    % Accumulate all the handlers
+start([Module|T], Handlers, Middlewares, Opts)->
+    % Accumulate all the handlers and middlewares
     ModuleOpts = apply(Module, init, [[]]),
     
-    case proplists:lookup(handlers, ModuleOpts)of
-        none ->
-            ModuleHandlers = [Module];
-        {handlers, ModuleHandlers}->
-            ModuleHandlers = ModuleHandlers
-    end,
-    start(T, Handlers ++ ModuleHandlers, Opts);
-start([], Handlers, Opts)->
+    ModuleHandlers = lookup(handlers, ModuleOpts, [Module]),
+    ModuleMiddlewares = lookup(middlewares, ModuleOpts, []),
+    
+    start(T, Handlers ++ ModuleHandlers, Middlewares ++ ModuleMiddlewares, Opts);
+
+start([], Handlers, Middlewares, Opts)->
     % Start the supervisor
-    Loop = fun(Req)-> spooky_server:handle(Req, Handlers) end,
+    ?LOG_INFO("Handlers ~p", [Handlers]),
+    ?LOG_INFO("Middlewares ~p", [Middlewares]),
+    Loop = fun(Req)-> 
+                   spooky_server:handle(Req, Handlers, Middlewares) 
+           end,
     Opts0 = Opts ++ [{loop, Loop}],
-    supervisor:start_link({local, ?MODULE}, ?MODULE, [Handlers, Opts0]).
+    ?LOG_INFO("Starting supervisor", []),
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [Handlers, Middlewares, Opts0]).
 
 %%
 %% Supervisor callback
 %% 
-init([Handlers, Opts])->
+init([Handlers, Middlewares, Opts])->
     % misultin specs
     MisultinSpecs = {misultin,
                      {misultin, start_link, [Opts]},
@@ -68,10 +76,10 @@ init([Handlers, Opts])->
                     },  
     % spooky specs
     ServerSpecs = {spooky_server,
-                   {spooky_server, start_link, [Handlers]},
+                   {spooky_server, start_link, [Handlers, Middlewares]},
                    permanent, 5000, worker, [spooky_server] 
                   },    
-    
+    ?LOG_DEBUG("Starting servers",[]),
     {ok, { {one_for_all, 5, 10}, [MisultinSpecs, ServerSpecs]} }.
 
 %%
@@ -82,3 +90,10 @@ behaviour_info(callbacks)->
 behaviour_info(_Other)->
     undefined.
 
+lookup(Key, Opts, Default)->
+    case proplists:lookup(Key, Opts) of
+        none -> 
+            Default;
+        {Key, Value} ->
+            Value
+    end.

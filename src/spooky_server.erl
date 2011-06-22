@@ -12,32 +12,36 @@
 %% Include files
 %% --------------------------------------------------------------------
 
+-include("../include/spooky.hrl").
+
 %% --------------------------------------------------------------------
 %% External exports
--export([start_link/1, handle/1, handle/2, handlers/0]).
+-export([start_link/2, handle/1, handle/3, handlers/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
-
--record(state, {handlers}).
 
 %% ====================================================================
 %% External functions
 %% ====================================================================
 
-start_link(Handlers)->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [Handlers], []).
+start_link(Handlers, Middlewares)->
+    ?LOG_INFO("Starting server", []),
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [Handlers, Middlewares], []).
 
 handle(Req)->
     Handlers = handlers(),
-    handle(Req, Handlers).
+    Middlewares = middlewares(),
+    handle(Req, Handlers, Middlewares).
 
-handle(Req, Handlers)->
+handle(Req, Handlers, Middlewares)->
     Method = Req:get(method),
-    handle(Req, Method, Handlers).
+    handle(Req, Method, Handlers, Middlewares).
 
 handlers()->
     gen_server:call(?MODULE, handlers).
+middlewares()->
+    gen_server:call(?MODULE, middlewares).
 
 %% ====================================================================
 %% Server functions
@@ -51,8 +55,8 @@ handlers()->
 %%          ignore               |
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
-init([Handlers]) ->
-    {ok, #state{handlers=Handlers}}.
+init([Handlers, Middlewares]) ->
+    {ok, [Handlers, Middlewares]}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
@@ -64,8 +68,10 @@ init([Handlers]) ->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_call(handlers, _From, State=#state{handlers=Handlers})->
-    {reply, Handlers, State};
+handle_call(handlers, _From, [Handlers, Middlewares])->
+    {reply, Handlers, [Handlers, Middlewares]};
+handle_call(middlewares, _From, [Handlers, Middlewares])->
+    {reply, Middlewares, [Handlers, Middlewares]};
 handle_call(_Request, _From, _State) ->
     _Reply = ok,
     {reply, _Reply, _State}.
@@ -96,6 +102,7 @@ handle_info(_Info, _State) ->
 %% Returns: any (ignored by gen_server)
 %% --------------------------------------------------------------------
 terminate(_Reason, _State) ->
+    ?LOG_INFO("Terminating spooky server. ~n ~p", [_Reason]),
     ok.
 
 %% --------------------------------------------------------------------
@@ -111,37 +118,94 @@ code_change(_OldVsn, _State, _Extra) ->
 %% --------------------------------------------------------------------
 
 
-handle(Req, _Method, [], _Path)->
-    Req:respond(404);
-handle(Req, Method, [Handler|T], Path)->
-    try apply(Handler, Method, [Req, Path]) of
-         {redirect, Url} ->
-             Req:respond(301, [{"Location", Url}], "");
-         _ -> 
-             ok
+handle(Req, 'GET', Handlers, Middlewares)->
+    handle(Req, get, Handlers, Middlewares);
+handle(Req, 'POST', Handlers, Middlewares)->
+    handle(Req, post, Handlers, Middlewares);
+handle(Req, 'PUT', Handlers, Middlewares)->
+    handle(Req, put, Handlers, Middlewares);
+handle(Req, 'DELETE', Handlers, Middlewares)->
+    handle(Req, delete, Handlers, Middlewares);
+handle(Req, 'HEAD', Handlers, Middlewares)->
+    handle(Req, head, Handlers, Middlewares);
+handle(Req, Method, Handlers, Middlewares)->
+    Path = Req:resource([lowercase, urldecode]),
+    handle(Req, Method, Path, Handlers, Middlewares).
+
+respond(Req, Status, State) when is_number(Status)->
+    respond(Req, Status, [], [], State).
+respond(Req, Status, Headers, Body)->
+    respond(Req, Status, Headers, Body, []).
+respond(Req, Status, Headers, Body, _State)->
+    %% TODO: Implement merging headers with the state and send off the response
+    Req:respond(Status, Headers, Body).
+
+% Iterate through a list of funcs until one returns a result or throws 
+% an HTTP error. Note that the list of funcs are closures holding the HTTP
+% method and path.
+continue(Req, Funcs)->
+    continue(Req, Funcs, []).
+
+continue(Req, [], State)->
+    respond(Req, 404, State);
+continue(Req, [Func|Funcs], State)->
+    ?LOG_INFO("Continue ~p", Funcs),
+    try Func(State) of 
+        {response, Status, Headers, Body} ->
+            {response, Status, Headers, Body};
+        {respond, Status, Headers, Body} ->
+            respond(Status, Headers, Body, State);
+        {respond, Status, Headers, Body, State} ->
+            respond(Status, Headers, Body, State);
+        {redirect, Url }->
+            respond(Req, 301, [{"Location", Url}], [], State);
+        State0 ->
+            continue(Req, Funcs, State0)
     catch 
         error:undef ->
-            handle(Req, Method, T, Path);
+            continue(Req, Funcs, State);
         error:function_clause ->
-            handle(Req, Method, T, Path);
+            continue(Req, Funcs, State);
         Status when is_number(Status)->
-            Req:respond(Status);
+            respond(Req, Status, State);
         {Status, Template} when is_number(Status) and is_list(Template)->
-            Req:respond(Status, Template);
+            respond(Req, Status, Template, State);
         {Status, Headers, Template} when is_number(Status) and is_list(Headers) and is_list(Template)->
-            Req:respond(Status, Headers, Template)
+            respond(Req, Status, Headers, Template, State)
     end.
+        
 
-handle(Req, 'GET', Path)->
-    handle(Req, get, Path);
-handle(Req, 'POST', Path)->
-    handle(Req, post, Path);
-handle(Req, 'PUT', Path)->
-    handle(Req, put, Path);
-handle(Req, 'DELETE', Path)->
-    handle(Req, delete, Path);
-handle(Req, 'HEAD', Path)->
-    handle(Req, head, Path);
-handle(Req, Method, Handlers)->
-    Path = Req:resource([lowercase, urldecode]),
-    handle(Req, Method, Handlers, Path).
+handle(Req, Method, Path, Handlers, Middlewares)->
+    StatelessHandler = fun(Func)->
+                               fun(Handler)->
+                                       fun(_State)->
+                                               apply(Handler, Func, [Req, Path])
+                                       end
+                               end
+                       end,
+    
+    StatefulHandler = fun(Func)->
+                              fun(Handler)->
+                                      fun(State)->
+                                              apply(Handler, Func, [Req, Path, State])
+                                      end
+                              end
+                      end,
+    
+    MiddlewareHandlers = lists:map(StatefulHandler(process_request), 
+                                   Middlewares),
+    
+    StatelessRequestHandlers = lists:map(StatelessHandler(Method),
+                                         Handlers),
+    
+    StatefulRequestHandlers = lists:map(StatefulHandler(Method),
+                                        Handlers),
+    
+    RequestHandlers = lists:flatten(lists:map(fun({Less, Full})->
+                                                      [Less,Full] 
+                                              end,
+                                              lists:zip(StatelessRequestHandlers,
+                                                        StatefulRequestHandlers))),
+    
+    continue(Req, MiddlewareHandlers ++ RequestHandlers).
+        

@@ -15,36 +15,10 @@ request(Method, Uri)->
     {misultin_req, #req{uri={type, Uri}, method=Method}, self()}.
 
 
-response(StatusCode)->
-    receive 
-        {response, Status, _, _} ->
-            ?assert(Status =:= StatusCode)
-    after 
-        200 ->
-            ?assert(timeout)
-    end.
+response(ResponseStatus, {response, Status, _, _})->
+    ?assertEqual(ResponseStatus, Status).
 
-response(StatusCode, Template)->
-    receive 
-        {response, Status, _, Response} when is_list(Response)->
-            ?assert(Status =:= StatusCode),
-            ?assert(string:equal(Template, Response))            
-    after
-        200 ->
-            ?assert(timeout)
-    end.
-            
-response(StatusCode, Headers, Template)->
-    receive 
-        {response, Status, ResponseHeaders, Response} when is_list(Response)->
-            ?assert(Status =:= StatusCode),
-            ?assert(string:equal(Template, Response)),
-            ?assert(Headers =:= ResponseHeaders)
-    after
-        200 ->
-            ?assert(timeout)
-    end.
-                
+status({response, Status, _, _})->Status.
 
 stop()->
     true = spooky:stop().
@@ -67,80 +41,57 @@ stop_test()->
 
 get_test()->
     spooky:start_link(spooky_get_hello_world),
-    spooky_server:handle(request()),
-    response(200),
-    spooky_server:handle(request('GET', "/androids")),
-    response(200),
-    spooky_server:handle(request('GET', "/androids/sheep")),
-    response(404),
-    spooky_server:handle(request('POST', "/androids")),
-    response(404),
+    ?assertEqual(200, status(spooky_server:handle(request()))),
+    ?assertEqual(200, status(spooky_server:handle(request('GET', "/androids")))),
+    ?assertEqual(404, status(spooky_server:handle(request('GET', "/androids/sheep")))),
+    ?assertEqual(404, status(spooky_server:handle(request('POST', "/androids")))),
     stop().
 
 redirect_test()->
     spooky:start_link(spooky_hello_world),
-    spooky_server:handle(request('GET', "/teapot")),
-    response(301),
+    ?assertEqual(301, status(spooky_server:handle(request('GET', "/teapot")))),
     stop().
 
 post_test()->
     spooky:start_link(spooky_post_hello_world),
-    spooky_server:handle(request('POST')),
-    response(200),
-    spooky_server:handle(request('POST', "/androids")),
-    response(200),
-    spooky_server:handle(request('POST', "/androids/sheep")),
-    response(404),
-    spooky_server:handle(request('GET', "/androids")),
-    response(404),
+    ?assertEqual(200, status(spooky_server:handle(request('POST')))),
+    ?assertEqual(200, status(spooky_server:handle(request('POST', "/androids")))),
+    ?assertEqual(404, status(spooky_server:handle(request('POST', "/androids/sheep")))),
+    ?assertEqual(404, status(spooky_server:handle(request('GET', "/androids")))),
     stop().
-
+ 
 put_test()->
     spooky:start_link(spooky_hello_world),
-    spooky_server:handle(request('PUT')),
-    response(200),
-    spooky_server:handle(request('PUT', "/androids")),
-    response(200),
-    spooky_server:handle(request('PUT', "/androids/sheep")),
-    response(404),
+    ?assertEqual(200, status(spooky_server:handle(request('PUT')))),
+    ?assertEqual(200, status(spooky_server:handle(request('PUT', "/androids")))),
+    ?assertEqual(404, status(spooky_server:handle(request('PUT', "/androids/sheep")))),
     stop().
+
 
 delete_test()->
     spooky:start_link(spooky_hello_world),
-    spooky_server:handle(request('DELETE')),
-    response(200),
-    spooky_server:handle(request('DELETE', "/androids")),
-    response(200),
-    spooky_server:handle(request('DELETE', "/androids/sheep")),
-    response(404),
+    ?assertEqual(200, status(spooky_server:handle(request('DELETE')))),
+    ?assertEqual(200, status(spooky_server:handle(request('DELETE', "/androids")))),
+    ?assertEqual(404, status(spooky_server:handle(request('DELETE', "/androids/sheep")))),
     stop().
 
 head_test()->
     spooky:start_link(spooky_hello_world),
-    spooky_server:handle(request('HEAD')),
-    response(200),
-    spooky_server:handle(request('HEAD', "/androids")),
-    response(200),
-    spooky_server:handle(request('HEAD', "/androids/sheep")),
-    response(404),
+    ?assertEqual(200, status(spooky_server:handle(request('HEAD')))),
+    ?assertEqual(200, status(spooky_server:handle(request('HEAD', "/androids")))),
+    ?assertEqual(404, status(spooky_server:handle(request('HEAD', "/androids/sheep")))),
     stop().
 
 multi_test()->
     spooky:start_link(spooky_multi_hello_world),
-    spooky_server:handle(request()),
-    response(200),
-    spooky_server:handle(request('POST')),
-    response(200),
-    spooky_server:handle(request('PUT')),
-    response(404),
+    ?assertEqual(200, status(spooky_server:handle(request()))),
+    ?assertEqual(200, status(spooky_server:handle(request('POST')))),
+    ?assertEqual(404, status(spooky_server:handle(request('PUT')))),
     stop().
 
 errors_test()->
     spooky:start_link(spooky_hello_world),
-    spooky_server:handle(request('GET', "/smashingpumpkins")),
-    response(418),
-    spooky_server:handle(request('POST', "/smashingpumpkins")),
-    response(418, "I'm a teapot."),
-    spooky_server:handle(request('PUT', "/smashingpumpkins")),
-    response(418, [{"X-Server", "Teapot"}], "I'm a teapot."),
+    ?assertEqual(418, status(spooky_server:handle(request('GET', "/smashingpumpkins")))),
+    ?assertEqual(418, status(spooky_server:handle(request('POST', "/smashingpumpkins")))),
+    ?assertEqual(418, status(spooky_server:handle(request('PUT', "/smashingpumpkins")))),
     stop().
