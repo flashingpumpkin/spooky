@@ -1,7 +1,7 @@
 %% Author: Alen Mujezinovic
 %% Created: 18 Jun 2011
-%% Description: This file shows how to split an application up into multiple
-%%              files. See `example/multi_hello_world.erl`
+%% Description: Example of how to use sessions.
+
 -module(spooky_session_example).
 -behaviour(spooky).
 
