@@ -136,15 +136,29 @@ respond(Req, Status, State) when is_number(Status)->
     respond(Req, Status, [], [], State).
 respond(Req, Status, Headers, Body)->
     respond(Req, Status, Headers, Body, []).
-respond(Req, Status, Headers, Body, _State)->
-    %% TODO: Implement merging headers with the state and send off the response
-    Req:respond(Status, Headers, Body).
+respond(Req, Status, Headers, Body, State)->
+    CookieMapper = fun(Cookie)->
+                           case Cookie of
+                               {Key, Value} ->
+                                   Req:set_cookie(Key, Value);
+                               {Key, Value, Options} ->
+                                   Req:set_cookie(Key, Value, Options)
+                           end
+                   end,
+    
+    Cookies = lists:map(CookieMapper, State:fetch(cookies)),
+
+    Headers0 = State:fetch(headers),
+    Headers1 = Headers ++ Headers0 ++ Cookies,   
+    
+    Req:respond(Status, Headers1, Body).
 
 % Iterate through a list of funcs until one returns a result or throws 
 % an HTTP error. Note that the list of funcs are closures holding the HTTP
 % method and path.
 continue(Req, Funcs)->
-    continue(Req, Funcs, []).
+    State = spooky_state:create(),
+    continue(Req, Funcs, State).
 
 continue(Req, [], State)->
     respond(Req, 404, State);
@@ -167,11 +181,11 @@ continue(Req, [Func|Funcs], State)->
         error:function_clause ->
             continue(Req, Funcs, State);
         Status when is_number(Status)->
-            respond(Req, Status, State);
-        {Status, Template} when is_number(Status) and is_list(Template)->
-            respond(Req, Status, Template, State);
-        {Status, Headers, Template} when is_number(Status) and is_list(Headers) and is_list(Template)->
-            respond(Req, Status, Headers, Template, State)
+            respond(Req, Status, [], [], State);
+        {Status, Body} when is_number(Status) and is_list(Body)->
+            respond(Req, Status, [], Body, State);
+        {Status, Headers, Body} when is_number(Status) and is_list(Headers) and is_list(Body)->
+            respond(Req, Status, Headers, Body, State)
     end.
         
 
