@@ -4,3 +4,6 @@
 [submodule "src/erlang-uuid"]
 	path = src/erlang-uuid
 	url = https://github.com/travis/erlang-uuid.git
+[submodule "src/erlydtl"]
+	path = src/erlydtl
+	url = https://github.com/evanmiller/erlydtl.git

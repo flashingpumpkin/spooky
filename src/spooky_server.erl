@@ -152,6 +152,10 @@ respond(Req, Status, Headers, Body, State)->
    
     Req:respond(Status, Headers1, Body).
 
+render(Req, Template, Data, State)->
+    {ok, Result} = Template:render(Data),
+    respond(Req, 200, [], Result, State).
+
 % Iterate through a list of funcs until one returns a result or throws 
 % an HTTP error. Note that the list of funcs are closures holding the HTTP
 % method and path.
@@ -171,6 +175,8 @@ continue(Req, [Func|Funcs], State)->
             respond(Status, Headers, Body, State);
         {redirect, Url }->
             respond(Req, 301, [{"Location", Url}], [], State);
+        {render, Template, Data} ->
+            render(Req, Template, Data, State);
         {Status, Body} when is_number(Status)->
             respond(Req, Status, [], Body, State);
         State0 ->
@@ -190,6 +196,7 @@ continue(Req, [Func|Funcs], State)->
         
 
 handle(Req, Method, Path, Handlers, Middlewares)->
+    ?LOG_INFO("Handle: ~p ~p", [Method, Path]),
     StatelessHandler = fun(Func)->
                                fun(Handler)->
                                        fun(_State)->
@@ -206,20 +213,25 @@ handle(Req, Method, Path, Handlers, Middlewares)->
                               end
                       end,
     
+    ?LOG_INFO("Creating middleware handlers ~p", [Middlewares]),    
     MiddlewareHandlers = lists:map(StatefulHandler(process_request), 
                                    Middlewares),
     
+    ?LOG_INFO("Creating stateless handlers ~p", [Handlers]),
     StatelessRequestHandlers = lists:map(StatelessHandler(Method),
                                          Handlers),
     
+    ?LOG_INFO("Creating stateful handlers ~p", [Handlers]),
     StatefulRequestHandlers = lists:map(StatefulHandler(Method),
                                         Handlers),
     
+    ?LOG_INFO("Creating request handlers ~p", [Handlers]),
     RequestHandlers = lists:flatten(lists:map(fun({Less, Full})->
                                                       [Less,Full] 
                                               end,
                                               lists:zip(StatelessRequestHandlers,
                                                         StatefulRequestHandlers))),
     
+    ?LOG_INFO("Starting continue loop", []),
     continue(Req, MiddlewareHandlers ++ RequestHandlers).
         
