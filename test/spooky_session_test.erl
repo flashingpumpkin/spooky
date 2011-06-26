@@ -43,5 +43,6 @@ session()->
     Cookie = proplists:get_value("Set-Cookie", Headers, []),
     SH = [{'Cookie', Cookie}],
     ?assertEqual("Incremented", body(request('GET', "/increment", SH))),
+    ?assertEqual("Incremented", body(request('GET', "/increment", SH))),
     ?assertEqual("Decremented", body(request('GET', "/decrement", SH))),
-    ?assertEqual(["1"], body(request('GET', "/", SH))).
+    ?assertEqual(["2"], body(request('GET', "/", SH))).
