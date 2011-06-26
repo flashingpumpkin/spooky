@@ -16,8 +16,7 @@ clean:
 	@rm -f erl_crash.dump
 
 debug: 
-	@mkdir -p $(EBIN_DIR)
-	@$(ERLC) -D log_debug $(ERLC_FLAGS) $(SRC_DIR)/*.erl
+	./rebar compile -C rebar.config.debug
 
 examples: all
 	@$(ERLC) $(ERLC_FLAGS) $(EXAMPLES_DIR)/*.erl

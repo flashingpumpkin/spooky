@@ -1,0 +1,10 @@
+%% -*- erlang -*-
+{erl_first_files, ["src/spooky.erl"]}.
+{erl_opts, [debug_info, {d, log_debug}]}.
+{cover_enabled, true}.
+{eunit_opts, [verbose]}.
+{deps, [
+        {misultin, ".*", {git, "git://github.com/ostinelli/misultin.git", "HEAD"}},
+        {erlydtl, ".*", {git, "git://github.com/evanmiller/erlydtl.git", "HEAD"}}
+       ]}.
+
