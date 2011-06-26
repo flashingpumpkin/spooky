@@ -1,7 +1,7 @@
 %% Author: Alen Mujezinovic
 %% Created: 26 Jun 2011
 %% Description: Testing the redirect
--module(redirect_test).
+-module(spooky_redirect_test).
 
 
 %%

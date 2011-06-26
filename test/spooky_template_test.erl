@@ -1,6 +1,6 @@
 %% Author: Alen Mujezinovic
 %% Created: 26 Jun 2011
-%% Description: Tests for GET methods
+%% Description: Tests for template rendering
 -module(spooky_template_test).
 
 %%
