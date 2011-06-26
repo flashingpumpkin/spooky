@@ -19,7 +19,7 @@
 %%
 
 init([])->
-    [{port, 8008}, {handlers, [?MODULE]}].
+    [{port, 8000}, {handlers, [?MODULE]}].
 
 get(_Req, [], _State)->
     {200, "Hello world"};
