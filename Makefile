@@ -6,7 +6,7 @@ ERLC := erlc
 ERLC_FLAGS := -W -I $(INCLUDE_DIR) -o $(EBIN_DIR) -pa $(EBIN_DIR)
 
 all:
-    @./rebar get-deps
+	@./rebar get-deps
 	@./rebar compile
 
 clean:
