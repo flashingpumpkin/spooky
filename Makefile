@@ -4,11 +4,9 @@ EXAMPLES_DIR := examples
 INCLUDE_DIR := include
 ERLC := erlc
 ERLC_FLAGS := -W -I $(INCLUDE_DIR) -o $(EBIN_DIR) -pa $(EBIN_DIR)
-ERL := erl
-TEST_FLAGS := -noshell -pa $(EBIN_DIR) 
-TEST_MODULES := spooky_test,spooky_test_session,spooky_test_template
 
 all:
+    @./rebar get-deps
 	@./rebar compile
 
 clean:
