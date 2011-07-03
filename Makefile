@@ -10,8 +10,7 @@ all:
 	@./rebar compile
 
 clean:
-	@rm -rf $(EBIN_DIR)/*
-	@rm -f erl_crash.dump
+	@./rebar clean
 
 debug: 
 	./rebar compile -C rebar.config.debug
