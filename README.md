@@ -71,7 +71,7 @@ look at other frameworks:
 
 ## Thanks
 
-Thanks to [Learn you some Erlang](http://www.learnyousomeerlang), 
+Thanks to [Learn you some Erlang](http://www.learnyousomeerlang.com), 
 [Mochiweb](https://github.com/mochi/mochiweb), 
 [Misultin](https://github.com/ostinelli/misultin) and
 [CouchDB](http://couchdb.org/) for being excellent repositories to learn
