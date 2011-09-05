@@ -24,7 +24,7 @@ init([])->
 get(_Req, [], _State)->
     {200, "Hello world"};
 get(_Req, [Name], _State)->
-    {200, "Hello world, " ++ Name}.
+    {respond, 200, [], "Hello world, " ++ Name}.
 
 %%
 %% Local Functions

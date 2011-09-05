@@ -21,13 +21,13 @@ init([])->
     [{port, 8000}].
 
 get(Req,[])->
-    Req:ok("Hello world");
+    {200, "Hello world"};
 get(_Req,["teapot"])->
     {redirect, "/smashingpumpkins"};
 get(_Req, ["smashingpumpkins"])->
     throw(418);
 get(Req,[Name])->
-    Req:ok("Hello world, " ++ Name ++ ".").
+    {respond, 200, [{"X-User", Name}], "Hello world, " ++ Name ++ "."}.
 
 post(Req,[])->
     Req:ok("Hello world");

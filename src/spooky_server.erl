@@ -170,9 +170,9 @@ continue(Req, [Func|Funcs], State)->
         {response, Status, Headers, Body} ->
             {response, Status, Headers, Body};
         {respond, Status, Headers, Body} ->
-            respond(Status, Headers, Body, State);
+            respond(Req, Status, Headers, Body, State);
         {respond, Status, Headers, Body, State} ->
-            respond(Status, Headers, Body, State);
+            respond(Req, Status, Headers, Body, State);
         {redirect, Url }->
             respond(Req, 301, [{"Location", Url}], [], State);
         {render, Template, Data} ->
