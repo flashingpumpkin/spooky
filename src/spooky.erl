@@ -39,22 +39,14 @@ start(Modules) when is_list(Modules)->
 start([Module|T], Handlers, Middlewares)->
     ?LOG_INFO("Starting spooky with ~p", [Module]),
     % The first module's options are the ones for misultin
-    ModuleOpts = apply(Module, init, [[]]),
-
-    ModuleHandlers = lookup(handlers, ModuleOpts, [Module]),
-    ModuleMiddlewares = lookup(middlewares, ModuleOpts, []),
-
+    {ModuleOpts, ModuleHandlers, ModuleMiddlewares} = init_module(Module),
     Opts = proplists:delete(handlers, ModuleOpts),
     ?LOG_INFO("Options ~p", [ModuleOpts]),
     start(T, Handlers ++ ModuleHandlers, Middlewares ++ ModuleMiddlewares, Opts).
 
 start([Module|T], Handlers, Middlewares, Opts)->
     % Accumulate all the handlers and middlewares
-    ModuleOpts = apply(Module, init, [[]]),
-    
-    ModuleHandlers = lookup(handlers, ModuleOpts, [Module]),
-    ModuleMiddlewares = lookup(middlewares, ModuleOpts, []),
-    
+    {_, ModuleHandlers, ModuleMiddlewares} = init_module(Module),
     start(T, Handlers ++ ModuleHandlers, Middlewares ++ ModuleMiddlewares, Opts);
 
 start([], Handlers, Middlewares, Opts)->
@@ -92,6 +84,16 @@ behaviour_info(callbacks)->
     [{init, 1}];
 behaviour_info(_Other)->
     undefined.
+
+
+%%
+%% Utility methods
+%%
+init_module(Module) ->
+    Opts = apply(Module, init, [[]]),
+    Handlers = lookup(handlers, Opts, [Module]),
+    Middlewares = lookup(middlewares, Opts, []),
+    {Opts, Handlers, Middlewares}.
 
 lookup(Key, Opts, Default)->
     case proplists:lookup(Key, Opts) of
